@@ -59,6 +59,7 @@ class Upgrader with WidgetsBindingObserver {
     UpgraderDevice? upgraderDevice,
     UpgraderOS? upgraderOS,
     this.willDisplayUpgrade,
+    this.forceUpdate,
   })  : _state = UpgraderState(
           client: client ?? http.Client(),
           clientHeaders: clientHeaders,
@@ -69,8 +70,7 @@ class Upgrader with WidgetsBindingObserver {
           durationUntilAlertAgain: durationUntilAlertAgain,
           languageCodeOverride: languageCode,
           messages: messages,
-          minAppVersion:
-              parseVersion(minAppVersion, 'minAppVersion', debugLogging),
+          minAppVersion: parseVersion(minAppVersion, 'minAppVersion', debugLogging),
           upgraderDevice: upgraderDevice ?? UpgraderDevice(),
           upgraderOS: upgraderOS ?? UpgraderOS(),
         ),
@@ -88,6 +88,10 @@ class Upgrader with WidgetsBindingObserver {
   /// and false when it should not be displayed. One good use for this callback
   /// is logging metrics for your app.
   WillDisplayUpgradeCallback? willDisplayUpgrade;
+
+  /// If true, the upgrade will be forced. The user will not be able to
+  /// ignore or dismiss the upgrade. The default is false.
+  bool? forceUpdate;
 
   /// A shared instance of [Upgrader].
   static Upgrader get sharedInstance => _sharedInstance;
@@ -111,8 +115,7 @@ class Upgrader with WidgetsBindingObserver {
   Version? _userIgnoredVersion;
   bool _hasAlerted = false;
 
-  static const notInitializedExceptionMessage =
-      'upgrader: initialize() not called. Must be called first.';
+  static const notInitializedExceptionMessage = 'upgrader: initialize() not called. Must be called first.';
 
   /// Initialize [Upgrader] by getting saved preferences, getting platform package info, and getting
   /// released version info.
@@ -165,8 +168,7 @@ class Upgrader with WidgetsBindingObserver {
 
   /// Updates the Upgrader state, which updates the stream, which triggers a
   /// call to [shouldDisplayUpgrade].
-  void updateState(UpgraderState newState,
-      {bool updateTheVersionInfo = false}) {
+  void updateState(UpgraderState newState, {bool updateTheVersionInfo = false}) {
     _state = newState;
 
     if (updateTheVersionInfo) {
@@ -192,8 +194,7 @@ class Upgrader with WidgetsBindingObserver {
 
   /// Handle application events.
   @override
-  Future<void> didChangeAppLifecycleState(
-      AppLifecycleState lifecycleState) async {
+  Future<void> didChangeAppLifecycleState(AppLifecycleState lifecycleState) async {
     super.didChangeAppLifecycleState(lifecycleState);
 
     // When app has resumed from background.
@@ -235,25 +236,19 @@ class Upgrader with WidgetsBindingObserver {
     final locale = findLocale();
 
     // Determine the country code of the locale, defaulting to `US`.
-    final country =
-        state.countryCodeOverride ?? findCountryCode(locale: locale);
+    final country = state.countryCodeOverride ?? findCountryCode(locale: locale);
     if (state.debugLogging) {
       print('upgrader: countryCode: $country');
     }
 
     // Determine the language code of the locale, defaulting to `en`.
-    final language =
-        state.languageCodeOverride ?? findLanguageCode(locale: locale);
+    final language = state.languageCodeOverride ?? findLanguageCode(locale: locale);
     if (state.debugLogging) {
       print('upgrader: languageCode: $language');
     }
 
     // Get the version info from the store.
-    final versionInfo = await store.getVersionInfo(
-        state: state,
-        installedVersion: installedVersion,
-        country: country,
-        language: language);
+    final versionInfo = await store.getVersionInfo(state: state, installedVersion: installedVersion, country: country, language: language);
 
     updateState(state.copyWith(versionInfo: versionInfo));
 
@@ -275,15 +270,13 @@ class Upgrader with WidgetsBindingObserver {
   String body(UpgraderMessages messages) {
     var msg = messages.message(UpgraderMessage.body)!;
     msg = msg.replaceAll('{{appName}}', appName());
-    msg = msg.replaceAll(
-        '{{currentAppStoreVersion}}', currentAppStoreVersion ?? '');
-    msg = msg.replaceAll(
-        '{{currentInstalledVersion}}', currentInstalledVersion ?? '');
+    msg = msg.replaceAll('{{currentAppStoreVersion}}', currentAppStoreVersion ?? '');
+    msg = msg.replaceAll('{{currentInstalledVersion}}', currentInstalledVersion ?? '');
     return msg;
   }
 
   bool blocked() {
-    return belowMinAppVersion() || versionInfo?.isCriticalUpdate == true;
+    return belowMinAppVersion() || versionInfo?.isCriticalUpdate == true || forceUpdate == true;
   }
 
   bool shouldDisplayUpgrade() {
@@ -353,8 +346,7 @@ class Upgrader with WidgetsBindingObserver {
   }
 
   bool alreadyIgnoredThisVersion() {
-    final rv = _userIgnoredVersion != null &&
-        _userIgnoredVersion == versionInfo?.appStoreVersion;
+    final rv = _userIgnoredVersion != null && _userIgnoredVersion == versionInfo?.appStoreVersion;
     if (rv && state.debugLogging) {
       print('upgrader: alreadyIgnoredThisVersion: true');
     }
@@ -366,8 +358,7 @@ class Upgrader with WidgetsBindingObserver {
       print('upgrader: installedVersion: ${state.packageInfo?.version}');
       print('upgrader: minAppVersion: ${state.minAppVersion}');
     }
-    if (versionInfo?.appStoreVersion == null ||
-        state.packageInfo?.version == null) {
+    if (versionInfo?.appStoreVersion == null || state.packageInfo?.version == null) {
       if (state.debugLogging) print('upgrader: isUpdateAvailable: false');
       return false;
     }
@@ -450,8 +441,7 @@ class Upgrader with WidgetsBindingObserver {
     var prefs = await SharedPreferences.getInstance();
 
     _userIgnoredVersion = versionInfo?.appStoreVersion;
-    await prefs.setString(
-        'userIgnoredVersion', _userIgnoredVersion?.toString() ?? '');
+    await prefs.setString('userIgnoredVersion', _userIgnoredVersion?.toString() ?? '');
     return true;
   }
 
@@ -461,8 +451,7 @@ class Upgrader with WidgetsBindingObserver {
     await prefs.setString('lastTimeAlerted', _lastTimeAlerted.toString());
 
     _lastVersionAlerted = versionInfo?.appStoreVersion;
-    await prefs.setString(
-        'lastVersionAlerted', _lastVersionAlerted?.toString() ?? '');
+    await prefs.setString('lastVersionAlerted', _lastVersionAlerted?.toString() ?? '');
 
     _hasAlerted = true;
     return true;
@@ -515,9 +504,7 @@ class Upgrader with WidgetsBindingObserver {
     if (await canLaunchUrl(Uri.parse(appStoreListingURL))) {
       try {
         await launchUrl(Uri.parse(appStoreListingURL),
-            mode: state.upgraderOS.isAndroid
-                ? LaunchMode.externalNonBrowserApplication
-                : LaunchMode.platformDefault);
+            mode: state.upgraderOS.isAndroid ? LaunchMode.externalNonBrowserApplication : LaunchMode.platformDefault);
       } catch (e) {
         if (state.debugLogging) {
           print('upgrader: launch to app store failed: $e');
@@ -526,8 +513,7 @@ class Upgrader with WidgetsBindingObserver {
     }
   }
 
-  static Version? parseVersion(
-      String? version, String name, bool debugLogging) {
+  static Version? parseVersion(String? version, String name, bool debugLogging) {
     if (version == null) return null;
     try {
       return Version.parse(version);
@@ -541,19 +527,16 @@ class Upgrader with WidgetsBindingObserver {
 }
 
 extension UpgraderExt on Upgrader {
-  String? get currentAppStoreListingURL =>
-      state.versionInfo?.appStoreListingURL;
+  String? get currentAppStoreListingURL => state.versionInfo?.appStoreListingURL;
 
-  String? get currentAppStoreVersion =>
-      state.versionInfo?.appStoreVersion?.toString();
+  String? get currentAppStoreVersion => state.versionInfo?.appStoreVersion?.toString();
 
   String? get currentInstalledVersion => state.packageInfo?.version;
 
   String? get releaseNotes => state.versionInfo?.releaseNotes;
 
   void installPackageInfo({PackageInfo? packageInfo}) {
-    updateState(state.copyWith(packageInfo: packageInfo),
-        updateTheVersionInfo: true);
+    updateState(state.copyWith(packageInfo: packageInfo), updateTheVersionInfo: true);
   }
 
   /// The minAppVersion in the Upgrader state.
@@ -567,11 +550,9 @@ extension UpgraderExt on Upgrader {
           ),
           updateTheVersionInfo: true);
     } else {
-      final parsedVersion =
-          Upgrader.parseVersion(version, 'minAppVersion', state.debugLogging);
+      final parsedVersion = Upgrader.parseVersion(version, 'minAppVersion', state.debugLogging);
       if (parsedVersion != null) {
-        updateState(state.copyWith(minAppVersion: parsedVersion),
-            updateTheVersionInfo: true);
+        updateState(state.copyWith(minAppVersion: parsedVersion), updateTheVersionInfo: true);
       }
     }
   }
