@@ -26,6 +26,7 @@ class UpgradeAlert extends StatefulWidget {
     this.onLater,
     this.onUpdate,
     this.shouldPopScope,
+    this.showPrompt = true,
     this.showIgnore = true,
     this.showLater = true,
     this.showReleaseNotes = true,
@@ -59,26 +60,32 @@ class UpgradeAlert extends StatefulWidget {
   /// Called to determine if the dialog blocks the current route from being popped.
   final BoolCallback? shouldPopScope;
 
-  /// Hide or show Ignore button on dialog (default: true)
+  /// Hide or show Prompt label on the dialog (default: true)
+  final bool showPrompt;
+
+  /// Hide or show Ignore button on the dialog (default: true)
   final bool showIgnore;
 
-  /// Hide or show Later button on dialog (default: true)
+  /// Hide or show Later button on the dialog (default: true)
   final bool showLater;
 
-  /// Hide or show release notes (default: true)
+  /// Hide or show release notes on the dialog (default: true)
   final bool showReleaseNotes;
 
   /// The text style for the cupertino dialog buttons. Used only for
   /// [UpgradeDialogStyle.cupertino]. Optional.
   final TextStyle? cupertinoButtonTextStyle;
 
-  /// The [Key] assigned to the dialog when it is shown.
+  /// The [Key] assigned to the dialog when it is shown. Optional.
   final GlobalKey? dialogKey;
 
-  /// For use by the Router architecture as part of the RouterDelegate.
+  /// A [GlobalKey] for the [NavigatorState] used when showing the upgrade dialog.
+  /// Provide this when using the Router architecture (e.g. with [RouterDelegate])
+  /// so that the correct context is used for navigation.
   final GlobalKey<NavigatorState>? navigatorKey;
 
-  /// The [child] contained by the widget.
+  /// The [child] widget displayed behind the upgrade dialog. If null, a
+  /// [SizedBox.shrink] is used.
   final Widget? child;
 
   @override
@@ -276,7 +283,7 @@ class UpgradeAlertState extends State<UpgradeAlert> {
   }
 
   /// Determines if the dialog blocks the current route from being popped.
-  /// Will return the result from [shouldPopScope] if it is not null, otherwise it will return false.
+  /// Will return the result from [shouldPopScope] if it is not null, otherwise it will return [UpgradeAlert.barrierDismissible].
   bool onCanPop() {
     if (widget.upgrader.state.debugLogging) {
       print('upgrader: onCanPop called');
@@ -289,7 +296,7 @@ class UpgradeAlertState extends State<UpgradeAlert> {
       return should;
     }
 
-    return false;
+    return widget.barrierDismissible;
   }
 
   Widget alertDialog(
@@ -332,9 +339,11 @@ class UpgradeAlertState extends State<UpgradeAlert> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(message),
-            Padding(
+            if (widget.showPrompt)
+              Padding(
                 padding: const EdgeInsets.only(top: 15.0),
-                child: Text(messages.message(UpgraderMessage.prompt) ?? '')),
+                child: Text(messages.message(UpgraderMessage.prompt) ?? ''),
+              ),
             if (notes != null) notes,
           ],
         )));

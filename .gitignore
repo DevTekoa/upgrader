@@ -17,3 +17,4 @@ coverage
 .flutter-plugins
 example/test/driver_test/screenshots
 .qodo
+ios/Flutter/ephemeral/

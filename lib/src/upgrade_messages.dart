@@ -55,8 +55,8 @@ class UpgraderMessages {
   final String languageCode;
 
   /// Provide a [code] to override the system-reported default locale.
-  UpgraderMessages({String? code})
-      : languageCode = (code ?? findLanguageCode()) {
+  UpgraderMessages({String? code, BuildContext? context})
+      : languageCode = (code ?? findLanguageCode(context: context)) {
     assert(languageCode.isNotEmpty);
   }
 
@@ -127,6 +127,10 @@ class UpgraderMessages {
         message =
             '¡Una nueva versión de {{appName}} está disponible! La versión {{currentAppStoreVersion}} ya está disponible-usted tiene {{currentInstalledVersion}}.';
         break;
+      case 'et':
+        message =
+            'Rakenduse {{appName}} uus versioon on saadaval! Versioon {{currentAppStoreVersion}} on nüüd saadaval - sul on hetkel {{currentInstalledVersion}}.';
+        break;
       case 'fa':
         message =
             'نسخه‌ی جدیدی از {{appName}} موجود است! نسخه‌ی {{currentAppStoreVersion}} در دسترس است ولی شما همچنان از نسخه‌ی {{currentInstalledVersion}} استفاده می‌کنید.';
@@ -165,7 +169,7 @@ class UpgraderMessages {
         break;
       case 'it':
         message =
-            'Una nuova versione di {{appName}} è disponibile! La versione {{currentAppStoreVersion}} è ora disponibile, voi avete la {{currentInstalledVersion}}.';
+            'È disponibile un nuovo aggiornamento per {{appName}}! La versione {{currentAppStoreVersion}} è disponibile. Tu stai usando la {{currentInstalledVersion}}.';
         break;
       case 'ja':
         message =
@@ -222,6 +226,10 @@ class UpgraderMessages {
       case 'ru':
         message =
             'Доступна новая версия приложения {{appName}}! Новая версия: {{currentAppStoreVersion}}, текущая версия: {{currentInstalledVersion}}.';
+        break;
+      case 'sl':
+        message =
+            'Na voljo je nova verzija {{appName}}!\nNameščena verzija: {{currentInstalledVersion}}\nVerzija v trgovini: {{currentAppStoreVersion}}.';
         break;
       case 'sv':
         message =
@@ -284,6 +292,9 @@ class UpgraderMessages {
         break;
       case 'es':
         message = 'IGNORAR';
+        break;
+      case 'et':
+        message = 'IGNOREERI';
         break;
       case 'fa':
         message = 'ردکردن';
@@ -357,6 +368,9 @@ class UpgraderMessages {
       case 'ru':
         message = 'НЕТ';
         break;
+      case 'sl':
+        message = 'Prekliči';
+        break;
       case 'sv':
         message = 'AVBRYT';
         break;
@@ -410,6 +424,9 @@ class UpgraderMessages {
       case 'es':
         message = 'MÁS TARDE';
         break;
+      case 'et':
+        message = 'HILJEM';
+        break;
       case 'fa':
         message = 'بعدا';
         break;
@@ -438,7 +455,7 @@ class UpgraderMessages {
         message = 'NANTI';
         break;
       case 'it':
-        message = 'DOPO';
+        message = 'PIÙ TARDI';
         break;
       case 'ja':
         message = '後で通知';
@@ -481,6 +498,9 @@ class UpgraderMessages {
         break;
       case 'ru':
         message = 'ПОЗЖЕ';
+        break;
+      case 'sl':
+        message = 'Pozneje';
         break;
       case 'sv':
         message = 'SENARE';
@@ -532,6 +552,9 @@ class UpgraderMessages {
         break;
       case 'es':
         message = 'ACTUALIZAR';
+        break;
+      case 'et':
+        message = 'UUENDA KOHE';
         break;
       case 'fa':
         message = 'بروزرسانی';
@@ -605,6 +628,9 @@ class UpgraderMessages {
       case 'ru':
         message = 'ОБНОВИТЬ';
         break;
+      case 'sl':
+        message = 'Posodobi';
+        break;
       case 'sv':
         message = 'UPPDATERA NU';
         break;
@@ -658,6 +684,9 @@ class UpgraderMessages {
       case 'es':
         message = '¿Le gustaría actualizar ahora?';
         break;
+      case 'et':
+        message = 'Kas soovid kohe uuendada?';
+        break;
       case 'fa':
         message = 'آیا بروزرسانی می‌کنید؟';
         break;
@@ -686,7 +715,7 @@ class UpgraderMessages {
         message = 'Apakah Anda ingin memperbaruinya sekarang?';
         break;
       case 'it':
-        message = 'Vorresti aggiornare ora?';
+        message = 'Vuoi aggiornare l\'applicazione?';
         break;
       case 'ja':
         message = '今すぐアップデートしますか?';
@@ -729,6 +758,9 @@ class UpgraderMessages {
         break;
       case 'ru':
         message = 'Хотите обновить сейчас?';
+        break;
+      case 'sl':
+        message = 'Želiš posodobiti sedaj?';
         break;
       case 'sv':
         message = 'Vill du uppdatera nu?';
@@ -780,6 +812,9 @@ class UpgraderMessages {
       case 'es':
         message = 'Notas De Lanzamiento';
         break;
+      case 'et':
+        message = 'Avaldamise märkmed';
+        break;
       case 'fr':
         message = 'Notes de version';
         break;
@@ -798,6 +833,9 @@ class UpgraderMessages {
       case 'ja':
         message = 'リリースノート';
         break;
+      case 'ko':
+        message = '릴리즈 노트';
+        break;
       case 'ku':
         message = 'تیبینەکانی وەشان';
         break;
@@ -810,11 +848,17 @@ class UpgraderMessages {
       case 'ru':
         message = 'Информация о выпуске';
         break;
+      case 'sl':
+        message = 'Posodobitve';
+        break;
       case 'te':
         message = 'విడుదల గమనికలు';
         break;
       case 'tr':
         message = 'Yayın Notları';
+        break;
+      case 'uz':
+        message = "Chiqarilgan eslatmalar";
         break;
 
       case 'bn':
@@ -825,7 +869,6 @@ class UpgraderMessages {
       case 'hu':
       case 'kk':
       case 'km':
-      case 'ko':
       case 'lt':
       case 'mn':
       case 'nb':
@@ -835,9 +878,6 @@ class UpgraderMessages {
       case 'sv':
       case 'ta':
       case 'uk':
-      case 'uz':
-        message = "Yangi talqin ma'lumotlari";
-        break;
       case 'vi':
       case 'zh':
       case 'en':
@@ -868,6 +908,9 @@ class UpgraderMessages {
         break;
       case 'es':
         message = '¿Actualizar la aplicación?';
+        break;
+      case 'et':
+        message = 'Uuenda rakendust?';
         break;
       case 'fa':
         message = 'نسخه‌ی جدید';
@@ -940,6 +983,9 @@ class UpgraderMessages {
         break;
       case 'ru':
         message = 'Обновить?';
+        break;
+      case 'sl':
+        message = 'Posodobi aplikacijo?';
         break;
       case 'sv':
         message = 'Uppdatera App?';

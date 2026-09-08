@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:version/version.dart';
 
-import 'upgrade_device.dart';
 import 'upgrade_messages.dart';
 import 'upgrade_os.dart';
 import 'upgrader_version_info.dart';
@@ -14,6 +13,7 @@ class UpgraderState {
   /// Creates an [Upgrader] state.
   UpgraderState({
     required this.client,
+    this.checkOnResume = true,
     this.clientHeaders,
     this.countryCodeOverride,
     this.debugDisplayAlways = false,
@@ -24,10 +24,16 @@ class UpgraderState {
     this.messages,
     this.minAppVersion,
     this.packageInfo,
-    required this.upgraderDevice,
+    this.showOnlyMandatoryUpdates = false,
     required this.upgraderOS,
     this.versionInfo,
   });
+
+  /// When `true`, the latest version info is retrieved from the store each
+  /// time the app is resumed from the background. When `false`, the version
+  /// info is only retrieved when [Upgrader] is initialized, or when
+  /// [Upgrader.updateVersionInfo] is called directly.
+  final bool checkOnResume;
 
   /// Provide an HTTP Client that can be replaced during testing.
   final http.Client client;
@@ -65,8 +71,10 @@ class UpgraderState {
   /// The app package metadata information.
   final PackageInfo? packageInfo;
 
-  /// Provide [UpgraderDevice] that ca be replaced during testing.
-  final UpgraderDevice upgraderDevice;
+  /// When `true`, the upgrade prompt is only displayed when the installed
+  /// version is below the minimum supported version (i.e. a mandatory update).
+  /// Optional updates are suppressed. Defaults to `false`.
+  final bool showOnlyMandatoryUpdates;
 
   /// Provides information on which OS this code is running on, and can be
   /// replaced during testing.
@@ -77,6 +85,7 @@ class UpgraderState {
 
   /// Creates a new state object by copying existing data and modifying selected fields.
   UpgraderState copyWith({
+    bool? checkOnResume,
     http.Client? client,
     Map<String, String>? clientHeaders,
     String? countryCodeOverride,
@@ -88,11 +97,12 @@ class UpgraderState {
     UpgraderMessages? messages,
     Version? minAppVersion,
     PackageInfo? packageInfo,
-    UpgraderDevice? upgraderDevice,
+    bool? showOnlyMandatoryUpdates,
     UpgraderOS? upgraderOS,
     UpgraderVersionInfo? versionInfo,
   }) {
     return UpgraderState(
+      checkOnResume: checkOnResume ?? this.checkOnResume,
       client: client ?? this.client,
       clientHeaders: clientHeaders ?? this.clientHeaders,
       countryCodeOverride: countryCodeOverride ?? this.countryCodeOverride,
@@ -105,7 +115,8 @@ class UpgraderState {
       messages: messages ?? this.messages,
       minAppVersion: minAppVersion ?? this.minAppVersion,
       packageInfo: packageInfo ?? this.packageInfo,
-      upgraderDevice: upgraderDevice ?? this.upgraderDevice,
+      showOnlyMandatoryUpdates:
+          showOnlyMandatoryUpdates ?? this.showOnlyMandatoryUpdates,
       upgraderOS: upgraderOS ?? this.upgraderOS,
       versionInfo: versionInfo ?? this.versionInfo,
     );
@@ -122,6 +133,7 @@ class UpgraderState {
     bool? versionInfo,
   }) {
     return UpgraderState(
+      checkOnResume: checkOnResume,
       client: client,
       clientHeaders: clientHeaders,
       countryCodeOverride:
@@ -135,7 +147,7 @@ class UpgraderState {
       messages: messages == true ? null : this.messages,
       minAppVersion: minAppVersion == true ? null : this.minAppVersion,
       packageInfo: packageInfo == true ? null : this.packageInfo,
-      upgraderDevice: upgraderDevice,
+      showOnlyMandatoryUpdates: showOnlyMandatoryUpdates,
       upgraderOS: upgraderOS,
       versionInfo: versionInfo == true ? null : this.versionInfo,
     );

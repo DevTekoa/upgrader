@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024 Larry Aasen. All rights reserved.
+// Copyright (c) 2018-2025 Larry Aasen. All rights reserved.
 
 import 'dart:async';
 import 'dart:ui';
@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:version/version.dart';
 
-import 'upgrade_device.dart';
 import 'upgrade_messages.dart';
 import 'upgrade_os.dart';
 import 'upgrade_state.dart';
@@ -37,14 +36,55 @@ Upgrader _sharedInstance = Upgrader();
 /// An upgrade controller that maintains a [state] that is used to
 /// trigger an alert or other UI to evaluate upgrading criteria.
 ///
+/// Instantiate an [Upgrader] object and pass it to [UpgradeAlert] or
+/// [UpgradeCard] to enable upgrade prompting. A shared instance is available
+/// via [Upgrader.sharedInstance].
+///
 /// See also:
 ///
 ///  * [UpgraderMessages], the default localized messages used for display.
 ///  * [UpgraderState], the [Upgrader] state.
 class Upgrader with WidgetsBindingObserver {
-  /// Creates an uprade controller that maintains a [state] that is used to
+  /// Creates an upgrade controller that maintains a [state] that is used to
   /// trigger an alert or other UI to evaluate upgrading criteria.
+  ///
+  /// Parameters:
+  /// - [checkOnResume]: When `true`, the version info is retrieved from the
+  ///   store each time the app is resumed from the background. When `false`,
+  ///   the version info is only retrieved during [initialize], which means no
+  ///   network requests are made when the app is resumed. Defaults to `true`.
+  /// - [client]: An HTTP client used to retrieve version information from the
+  ///   store. Defaults to `http.Client()`. Can be replaced for mock testing.
+  /// - [clientHeaders]: Optional HTTP headers used by [client]. Defaults to `null`.
+  /// - [countryCode]: A country code that overrides the system locale when
+  ///   looking up the app in the store. Defaults to `null`.
+  /// - [debugDisplayAlways]: When `true`, always forces the upgrade prompt to
+  ///   display regardless of whether an upgrade is available. Defaults to `false`.
+  /// - [debugDisplayOnce]: When `true`, displays the upgrade prompt at least
+  ///   once per session. Defaults to `false`.
+  /// - [debugLogging]: When `true`, prints diagnostic log statements. Defaults
+  ///   to `false`.
+  /// - [durationUntilAlertAgain]: How long to wait before alerting the user
+  ///   again after a previous alert. Defaults to 3 days.
+  /// - [languageCode]: A language code that overrides the system locale when
+  ///   retrieving localized messages. Defaults to `null`.
+  /// - [messages]: Optional localized messages used for display. When `null`,
+  ///   messages are determined from the app locale.
+  /// - [minAppVersion]: The minimum app version supported. Users running an
+  ///   older version will be forced to update. Should be a valid version string
+  ///   such as `"2.0.13"`. Overrides any minimum version from [UpgraderStore].
+  ///   Defaults to `null`.
+  /// - [showOnlyMandatoryUpdates]: When `true`, the upgrade prompt is only
+  ///   shown when the installed version is below the minimum supported version
+  ///   (a mandatory update). Optional updates are suppressed. Defaults to `false`.
+  /// - [storeController]: A controller that provides store details for each
+  ///   platform. Defaults to `UpgraderStoreController()`.
+  /// - [upgraderOS]: Information about the OS this code is running on.
+  ///   Defaults to `UpgraderOS()`.
+  /// - [willDisplayUpgrade]: An optional callback invoked each time [Upgrader]
+  ///   determines whether to show or hide the upgrade prompt. Defaults to `null`.
   Upgrader({
+    bool checkOnResume = true,
     http.Client? client,
     Map<String, String>? clientHeaders,
     String? countryCode,
@@ -55,12 +95,13 @@ class Upgrader with WidgetsBindingObserver {
     String? languageCode,
     UpgraderMessages? messages,
     String? minAppVersion,
+    bool showOnlyMandatoryUpdates = false,
     UpgraderStoreController? storeController,
-    UpgraderDevice? upgraderDevice,
     UpgraderOS? upgraderOS,
     this.willDisplayUpgrade,
     this.forceUpdate,
   })  : _state = UpgraderState(
+          checkOnResume: checkOnResume,
           client: client ?? http.Client(),
           clientHeaders: clientHeaders,
           countryCodeOverride: countryCode,
@@ -71,7 +112,7 @@ class Upgrader with WidgetsBindingObserver {
           languageCodeOverride: languageCode,
           messages: messages,
           minAppVersion: parseVersion(minAppVersion, 'minAppVersion', debugLogging),
-          upgraderDevice: upgraderDevice ?? UpgraderDevice(),
+          showOnlyMandatoryUpdates: showOnlyMandatoryUpdates,
           upgraderOS: upgraderOS ?? UpgraderOS(),
         ),
         storeController = storeController ?? UpgraderStoreController() {
@@ -84,9 +125,15 @@ class Upgrader with WidgetsBindingObserver {
   UpgraderStoreController storeController;
 
   /// Called when [Upgrader] determines that an upgrade may or may not be
-  /// displayed. The [value] parameter will be true when it should be displayed,
-  /// and false when it should not be displayed. One good use for this callback
-  /// is logging metrics for your app.
+  /// displayed. The callback receives three named parameters:
+  /// - `display`: `true` when the upgrade prompt will be shown, `false` when it
+  ///   will not be shown.
+  /// - `installedVersion`: the currently installed version of the app, or `null`
+  ///   if unknown.
+  /// - `versionInfo`: the [UpgraderVersionInfo] retrieved from the store, or
+  ///   `null` if unavailable.
+  ///
+  /// One good use for this callback is logging metrics for your app.
   WillDisplayUpgradeCallback? willDisplayUpgrade;
 
   /// If true, the upgrade will be forced. The user will not be able to
@@ -158,7 +205,8 @@ class Upgrader with WidgetsBindingObserver {
       await updateVersionInfo();
 
       // Add an observer of application events, so that when the app returns
-      // from the background, the version info is updated.
+      // from the background, the version info is updated when [checkOnResume]
+      // is true.
       WidgetsBinding.instance.addObserver(this);
 
       return true;
@@ -199,6 +247,12 @@ class Upgrader with WidgetsBindingObserver {
 
     // When app has resumed from background.
     if (lifecycleState == AppLifecycleState.resumed) {
+      if (!state.checkOnResume) {
+        if (state.debugLogging) {
+          print('upgrader: checkOnResume is false, not updating version info');
+        }
+        return;
+      }
       await updateVersionInfo();
     }
   }
@@ -296,6 +350,8 @@ class Upgrader with WidgetsBindingObserver {
       rv = false;
     } else if (isBlocked) {
       rv = true;
+    } else if (state.showOnlyMandatoryUpdates) {
+      rv = false;
     } else if (isTooSoon() || alreadyIgnoredThisVersion()) {
       rv = false;
     }
@@ -334,6 +390,12 @@ class Upgrader with WidgetsBindingObserver {
 
   bool isTooSoon() {
     if (_lastTimeAlerted == null) {
+      return false;
+    }
+
+    // If the current app store version is different from the last version
+    // alerted, it is not too soon to alert again.
+    if (_lastVersionAlerted != null && versionInfo?.appStoreVersion != null && _lastVersionAlerted != versionInfo?.appStoreVersion) {
       return false;
     }
 

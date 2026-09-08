@@ -152,7 +152,7 @@ void main() {
     expect(await playStore.lookupById('com.not.a.valid.application'), isNull);
   }, skip: false);
 
-  test('testing lookupById with invalid version', () async {
+  test('testing lookupById with bracket pattern version', () async {
     final client = await MockPlayStoreSearchClient.setupMockClient();
     final playStore = PlayStoreSearchAPI(client: client);
 
@@ -162,7 +162,8 @@ void main() {
 
     expect(
         playStore.releaseNotes(response!), 'Minor updates and improvements.');
-    expect(playStore.version(response), isNull);
+    // Version 1.19.2 is extracted using bracket pattern ]]],"X.Y.Z"
+    expect(playStore.version(response), '1.19.2');
   }, skip: false);
 
   test('testing release notes', () async {
@@ -207,20 +208,43 @@ void main() {
     expect(playStore.description(response)?.length, greaterThan(10));
   }, skip: false);
 
-  test('testing invalid store version', () async {
+  test('testing store version with bracket pattern', () async {
     final client = await MockPlayStoreSearchClient.setupMockClient();
     final playStore = PlayStoreSearchAPI(client: client);
 
     final response = await playStore.lookupById('com.testing.test6');
     expect(response, isNotNull);
     expect(response, isInstanceOf<Document>());
-    expect(playStore.version(response!), isNull);
+    // Version 1.19.2 is extracted using bracket pattern ]]],"X.Y.Z"
+    expect(playStore.version(response!), '1.19.2');
   }, skip: false);
 
   /// Helper method
   Document resDesc(String description) {
     final html =
         '<div class="W4P4ne">hello<div class="PHBdkd">inside<div class="DWPxHb">$description</div></div></div>';
+    return Document.html(html);
+  }
+
+  /// Helper method to generate a mock Play Store response containing both
+  /// description and release notes sections.
+  Document resReleaseNotes(
+      {required String sectionTitle,
+      required String description,
+      required String releaseNotes}) {
+    final html = '''
+<div class="W4P4ne">
+  <div class="PHBdkd">
+    <div class="DWPxHb" itemprop="description">$description</div>
+  </div>
+</div>
+<div class="W4P4ne">
+  <div class="wSaTQd"><h2 class="Rm6Gwb">$sectionTitle</h2></div>
+  <div class="PHBdkd">
+    <div class="DWPxHb" itemprop="description">$releaseNotes</div>
+  </div>
+</div>
+''';
     return Document.html(html);
   }
 
@@ -249,6 +273,18 @@ void main() {
             tagRES:
                 r'\[\Minimum supported app version\:[\s]*(?<version>[^\s]+)[\s]*\]'),
         '4.5.6+1');
+  });
+
+  test('testing release notes with localized classic Play Store heading',
+      () async {
+    final playStore = PlayStoreSearchAPI();
+    final response = resReleaseNotes(
+      sectionTitle: 'Что нового',
+      description: 'English description fallback.',
+      releaseNotes: 'Русские примечания к выпуску.',
+    );
+
+    expect(playStore.releaseNotes(response), 'Русские примечания к выпуску.');
   });
 
   test('testing special characters', () async {

@@ -1,3 +1,74 @@
+## 13.7.0
+
+- [457][553] Fixed barrierDismissible being ignored in UpgradeAlert. (thanks to @mem-5514-tahara)
+
+## 13.6.0
+
+- [517] Added the `checkOnResume` parameter to `Upgrader` that, when `false`, stops the store version check from being made each time the app is resumed from the background.
+
+## 13.5.0
+
+- Updated the xml dependency constraint from `^6.3.0` to `>=6.3.0 <8.0.0` to support stable xml 7.0.0.
+
+## 13.4.0
+
+- [551] [550] Changed `isTooSoon` to reset when a newer app store version is available.
+
+## 13.3.0
+
+- [549] Added edSignature parsing from Appcast XML and made bestItem accessible. (thanks to @falt008)
+
+## 13.2.0
+
+- [544] Will use localized Google Play release notes instead of always falling back to English.
+
+## 13.1.0
+
+- [547] Updated package_info_plus version range to <11.0.0.
+
+## 13.0.0
+
+- [542] Added minimumUpdateVersion parsing for Appcast XML. (thanks to @FaresHossamAmin)
+- Fixed [515]: Remove version package exposure from UpgraderAppcastStore.
+- Fixed [470]: Option to suppress optional updates.
+- Improved documentation.
+
+## 12.5.0
+
+- Fixed Slovenian ISO 639-1 code to ('sl'). (thanks to @AlanJereb)
+
+## 12.4.0
+
+- Added new language translation for Estonian ('et'). (thanks to @sisalik1)
+- Added new language translation for Slovenian ('si'). (thanks to @AlanJereb)
+- [526] Incorporated the suggestion of adding context to UpgraderMessages(). (thanks to @defuncart)
+- [530] Updated Italian upgrade messages for clarity. (thanks to @Samplasion)
+- [533] Fixed Korean translation for release notes. (thanks to @junsuk5)
+- Updated the Android example code.
+
+## 12.3.0
+
+- [525] [520] Added fallback version parsing for regional Play Store pages. (thanks to @youngkiu)
+
+## 12.2.0
+
+- [521] [522] Added fallback version parsing for regional Play Store pages. (thanks to @youngkiu)
+
+## 12.1.0
+
+- Added the showPrompt parameter to UpgradeAlert and UpgradeCard to hide the display of the prompt. (thanks to @EArminjon)
+
+## 12.0.0
+
+- Removed the use of device_info_plus to reduce the number of dependencies used by this package.
+- Renamed master branch to main.
+- The minimum Flutter version supported is now 3.27.0.
+
+## 11.5.1
+
+- [510] Updated device_info_plus to support 12.0.0 with updated constraint <13.0.0.
+- [511] Updated package_info_plus to support 9.0.0 with updated constraint <10.0.0.
+
 ## 11.5.0
 
 - [482] Will now call showCupertinoDialog instead of showDialog for CupertinoApp.
